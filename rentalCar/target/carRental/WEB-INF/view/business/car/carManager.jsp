@@ -195,6 +195,213 @@
 <script src="${pageContext.request.contextPath}/resources/layui/layui.js"></script>
 <script type="text/javascript">
 
+    //1.声明数据表格对象
+    var tableIns;
+    //2.初始化layui的模块
+    layui.use(['jquery','layer','form','table','upload'],function () {
+        var $ = layui.jquery,
+            layer = layui.layer,
+            form = layui.form,
+            table = layui.table,
+            upload = layui.upload;
+        //3.渲染数据表格
+        tableIns = table.render({
+            elem : "#carTable",
+            url: "${pageContext.request.contextPath}/car/loadAllCar.action", //数据接口
+            title: "车辆数据表",
+            toolbar: "#carToolBar" ,
+            height: "full-205",
+            cellMinWidth: 100 ,
+            page: true , //启动分页
+            cols:[[  //列表数据
+                {type:'checkbox',fixed:"left"},
+                {field:'carnumber',title:'车牌号',align:'center',with:'90'},
+                {field:'cartype',title:'车辆类型',align:'center',with:'90'},
+                {field:'color',title:'车辆颜色',align:'center',with:'90'},
+                {field:'price',title:'车辆价格',align:'center',with:'90'},
+                {field:'rentprice',title:'出租价格',align:'center',with:'90'},
+                {field:'deposit',title:'出租押金',align:'center',with:'90',templet: function (d) {
+                        return d.isrenting == '1'? '<font color=blue>已出租</font>' : '<font color=red>未出租</font>'
+                    }},
+                {field:'description',title:'车辆描述',align:'center',with:'150'},
+                {field:'carimg',title:'缩略图',align:'center',with:'80',templet:function (d) {
+                        return "<img width=40 height=40 src=${pageContext.request.contextPath}/file/downloadShowFile.action?path="+d.carimg+"/>"
+                    }},
+                {field:'createtime',title:'录入时间',align:'center',with:'160'},
+                {fixd:'right',title:'操作',toolbar:'#carBar' ,align:'center',with:'240'}
+            ]],
+            done:function (data , curr ,count) {
+                //如果不是第一页,当前返回数据为0,我们就让返回上一页
+                if(data.data.length == 0 && curr != 1){
+                    tableIns.reload({
+                        page:{
+                            curr:curr-1
+                        }
+                    })
+                }
+            }
+        })
+
+
+        //模糊查询
+        $("#doSearch").click(function () {
+            //获取搜索框中的参数
+            var param =  $("#searchFrm").serialize();
+            tableIns.reload({
+                url: "${pageContext.request.contextPath}/car/loadAllCar.action?"+param,
+                page: {curr: 1}
+            })
+        })
+
+        //编写行工具栏监听
+        table.on('tool(carTable)',function (obj) {
+            //获取当前行数数据
+            var data =  obj.data;
+            console.log(data)
+            if(obj.event == 'viewImage'){
+                showCarImage(data);
+            }else if(obj.event == 'del'){
+                layer.confirm("是否确认删除【"+data.carnumber+"】这个车辆？",function (index) {
+                    //发送ajax删除
+                    $.get("${pageContext.request.contextPath}/car/deleteCar.action",{"carnumber":data.carnumber},function (result) {
+                        layer.msg(result.msg);
+                        //刷新表格数据
+                        tableIns.reload();
+                    })
+                })
+            }else if(obj.event == 'edit'){
+                openUpdateCar(data);
+            }
+        })
+
+        //查看大图的方法
+        function showCarImage(data){
+            layer.open({
+                type:1,
+                title:"["+data.carnumber+"]的车辆图片",
+                content: $("#viewCarImageDiv"),
+                area: ['750px','500px'],
+                success:function (index) {
+                    //找到图片,设置src属性
+                    $("#view_carimg").attr("src","${pageContext.request.contextPath}/file/downloadShowFile.action?path="+data.carimg);
+                }
+            })
+        }
+
+        //头部工具栏的监听
+        table.on("toolbar(carTable)",function (obj) {
+            switch (obj.event) {
+                case 'add':
+                    openAddCar();
+                    break;
+                case 'deleteBatch':
+                    deleteBatch();
+                    break;
+            }
+        })
+
+        //打开添加页面
+        var mainIndex;
+        var url;
+        function openAddCar(){
+            mainIndex =  layer.open({
+                type: 1,
+                title:'添加车辆',
+                content: $("#saveOrUpdateDiv"),
+                area: ['700px','480px'],
+                success: function (index) {
+                    //清空数据
+                    $("#dataFrm")[0].reset();
+                    //设置默认图片
+                    $("#showCarImg").attr("src","${pageContext.request.contextPath}/file/downloadShowFile.action?path=images/defaultcarimage.jpg");
+                    //设置图片的路径
+                    $("#carimg").val("images/defaultcarimage.jpg");
+                    //设置请求的url
+                    url="${pageContext.request.contextPath}/car/addCar.action";
+                    //设置移除carnumber只读
+                    $("#carnumber").removeAttr("readonly","readonly");
+                }
+            })
+        }
+
+
+        //打开修改窗口
+        function openUpdateCar(data){
+            mainIndex =  layer.open({
+                type: 1,
+                title:'修改车辆',
+                content: $("#saveOrUpdateDiv"),
+                area: ['700px','480px'],
+                success: function (index) {
+                    //获取设置表单数据
+                    form.val("dataFrm",data);
+                    //设置默认图片
+                    $("#showCarImg").attr("src","${pageContext.request.contextPath}/file/downloadShowFile.action?path="+data.carimg);
+                    //设置请求的url
+                    url="${pageContext.request.contextPath}/car/updateCar.action";
+                    //设置移除carnumber只读
+                    $("#carnumber").removeAttr("readonly","readonly");
+                }
+            })
+        }
+
+
+
+        //保存表单信息
+        form.on("submit(doSubmit)",function (obj) {
+            //序列化表单数据
+            var param = $("#dataFrm").serialize();
+            //发送ajax请求
+            $.post(url,param,function (obj) {
+                layer.msg(obj.msg);
+                //关闭弹出层
+                layer.close(mainIndex);
+                //刷新表格数据
+                tableIns.reload();
+            })
+        })
+
+        //上传图片
+        upload.render({
+            elem: '#carimgDiv',
+            url: '${pageContext.request.contextPath}/file/uploadFile.action',
+            method: 'post',
+            acceptMime: 'images/*',
+            field: 'mf',
+            done: function (res,index, upload) {
+                $("#showCarImg").attr('src','${pageContext.request.contextPath}/file/downloadShowFile.action?path='+res.data.src);
+                $('#carimg').val(res.data.src);
+                $('#carimgDiv').css("background","#fff");
+            }
+        })
+
+
+        //批量删除
+        function deleteBatch() {
+            //得到选中的数据行
+            var checkStatus =  table.checkStatus('carTable');
+            var data = checkStatus.data;
+            var param = "";
+            $.each(data,function (i,item) {
+                if(i == 0){
+                    param += "ids="+item.carnumber;
+                }else {
+                    param += "&ids="+item.carnumber;
+                }
+            })
+
+            //确认框，如果用户点击确认删除，发送ajax 请求
+            layer.confirm('您是否确认删除？',function (index) {
+                $.post("${pageContext.request.contextPath}/car/deleteBatchCar.action",param,function (result) {
+                    layer.msg(result.msg);
+                    //刷新数据表格
+                    tableIns.reload();
+                })
+            })
+
+        }
+
+    })
 
 </script>
 </body>
