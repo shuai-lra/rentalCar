@@ -112,7 +112,7 @@
             <div class="layui-inline">
                 <label class="layui-form-label">身份证号:</label>
                 <div class="layui-input-inline">
-                    <input type="text" name="identity" lay-verify="required" placeholder="请输入客户姓名" autocomplete="off"
+                    <input type="text" name="identity" lay-verify="required" placeholder="请输入身份证号" autocomplete="off"
                            class="layui-input">
                 </div>
             </div>
@@ -163,7 +163,168 @@
 
 <script src="${pageContext.request.contextPath}/resources/layui/layui.js"></script>
 <script type="text/javascript">
+    //1.定义渲染的数据表格
+    var tableIns;
+    //2.定义和初始化模块
+    layui.use(['jquery','layer','form','table'],function () {
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var form = layui.form;
+        var table = layui.table;
 
+        //3.渲染数据表格
+        tableIns = table.render({
+            elem: '#customerTable' , //渲染的目标对象
+            url: '${pageContext.request.contextPath}/customer/loadAllCustomer.action', //数据接口地址
+            title:'客户数据表', //标题
+            height: 'full-210',
+            cellMinWidth : 100 , //设置列最小默认宽度
+            toolbar: '#customerToolBar' , //表格的头部工具栏
+            page: true , //启动分页
+            cols: [[
+                {type:'checkbox',fixed: 'left'},
+                {field:'identity',title:'身份证',align:'center',width:'200'},
+                {field:'custname',title:'客户姓名',align:'center',width:'125'},
+                {field:'address',title:'客户地址',align:'center',width:'125'},
+                {field:'career',title:'客户职业',align:'center',width:'150'},
+                {field:'phone',title:'手机号码',align:'center',width:'150'},
+                {field:'sex',title:'性别',align:'center',width:'200',templet:function (d) {
+                        return d.sex == '1' ? '<font color=blue>男</font>' : '<font color=red>女</font>'
+                    }},
+                {field:'createtime',title:'录入时间',align:'center',width:'200'},
+                {fixed:'right',title:'操作',toolbar:'#customerBar',align:'center',width:'150'}
+            ]],
+            done:function (data , curr ,count) {
+                //如果不是第一页,当前返回数据为0,我们就让返回上一页
+                if(data.data.length == 0 && curr != 1){
+                    tableIns.reload({
+                        page:{
+                            curr:curr-1
+                        }
+                    })
+                }
+            }
+        });
+
+        //模糊查询
+        $("#doSearch").click(function () {
+            //获取搜索框中的参数
+            var param =  $("#searchFrm").serialize();
+            tableIns.reload({
+                url: "${pageContext.request.contextPath}/customer/loadAllCustomer.action?"+param,
+                page: {curr: 1}
+            })
+        })
+
+        //监听头部工具栏，触发事件
+        table.on('toolbar(customerTable)', function(obj){
+            switch(obj.event){
+                case 'add':
+                    //打开一个弹出层
+                    openAddCustomer();
+                    break;
+                case 'deleteBatch':
+                    deleteBatch();
+                    break;
+            };
+        });
+
+        //打开弹出层
+        var url; //定义url一会保存的时候使用
+        var mainIndex; //弹出层对象
+        function openAddCustomer(){
+            mainIndex = layer.open({
+                type : 1,
+                title: '添加客户',
+                content: $("#saveOrUpdateDiv"),
+                area: ['700px','320px'],
+                success:function (index) {
+                    //清空表单数据
+                    $("#dataFrm")[0].reset();
+                    url = "${pageContext.request.contextPath}/customer/addCustomer.action";
+                }
+            })
+        }
+
+        //保存数据
+        form.on("submit(doSubmit)",function (obj) {
+            //序列化表单数据
+            var param = $("#dataFrm").serialize();
+            //发送ajax请求
+            $.post(url,param,function (obj) {
+                layer.msg(obj.msg);
+                //关闭弹出层
+                layer.close(mainIndex);
+                //刷新数据表格
+                tableIns.reload();
+            })
+        })
+
+        //监听行工具栏
+        table.on('tool(customerTable)',function (obj) {
+            //console.log(obj)
+            //获取当前行的数据
+            var data = obj.data;
+            //获取当前触发的事件
+            var layEvent =  obj.event;
+            if(layEvent == 'del'){
+                layer.confirm('您确认要删除['+data.custname+'这个客户吗',function (index) {
+                    //如果用户点击确认执行该函数
+                    $.get("${pageContext.request.contextPath}/customer/deleteCustomer.action",{identity: data.identity},function (result) {
+                        layer.msg(result.msg);
+                        //刷新数据表格
+                        tableIns.reload();
+                    })
+                })
+            } else if (layEvent == 'edit'){
+                //调用方法打开一个编辑窗口
+                openUpdateCustomer(data);
+            }
+        })
+
+        //打开编辑窗口
+        function openUpdateCustomer(data){
+            mainIndex = layer.open({
+                type : 1,
+                title: '修改客户',
+                content: $("#saveOrUpdateDiv"),
+                area: ['700px','320px'],
+                success:function (index) {
+                    //要把数据回显到表单中
+                    form.val('dataFrm',data);
+                    //设置url值
+                    url = "${pageContext.request.contextPath}/customer/updateCustomer.action";
+                }
+            })
+        }
+
+
+        //批量删除的方法
+        function deleteBatch(){
+            //获取选中行的数据
+            var checkStatus =  table.checkStatus("customerTable");
+            var data = checkStatus.data;  //data就是一行数据
+            //循环拼接参数
+            var param = "";
+            $.each(data,function (i,item) {
+                if(i == 0){
+                    param += "ids="+item.identity;
+                }else{
+                    param +="&ids="+item.identity;
+                }
+            })
+            //是否确认删除
+            layer.confirm("真的要删除这些数据?",function (index) {
+                //发送ajax请求
+                $.get("${pageContext.request.contextPath}/customer/batchDeleteCustomer.action",param,function (res) {
+                    layer.msg(res.msg);
+                    //刷新表格数据
+                    tableIns.reload();
+                })
+            })
+        }
+
+    })
 </script>
 </body>
 </html>

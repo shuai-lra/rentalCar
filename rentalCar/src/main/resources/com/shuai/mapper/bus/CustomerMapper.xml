@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shuai.bus.mapper.CustomerMapper">
+
+    <resultMap id="BaseResultMap" type="com.shuai.bus.domain.Customer">
+        <!-- id的映射  -->
+        <id column="identity" jdbcType="VARCHAR" property="identity"/>
+        <!-- 其他字段的映射  -->
+        <result column="custname" jdbcType="VARCHAR" property="custname"/>
+        <result column="sex" jdbcType="INTEGER" property="sex"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+        <result column="career" jdbcType="VARCHAR" property="career"/>
+        <result column="createtime" jdbcType="TIMESTAMP" property="createtime"/>
+    </resultMap>
+
+    <!--  sql片段  -->
+    <sql id="Base_Column_List">
+        identity , custname, sex, address ,phone, career , createtime
+    </sql>
+
+    <!--用户登录-->
+    <select id="queryAllCustomer" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from bus_customer
+        <where>
+            <if test="identity != null and identity != ''">
+                and identity like concat("%",#{identity},"%")
+            </if>
+            <if test="custname != null and custname != ''">
+                and custname like concat("%",#{custname},"%")
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone like concat("%",#{phone},"%")
+            </if>
+            <if test="career != null and career != ''">
+                and career like concat("%",#{career},"%")
+            </if>
+            <if test="address != null and address != ''">
+                and address like concat("%",#{address},"%")
+            </if>
+            <if test="sex != null">
+                and sex = #{sex}
+            </if>
+        </where>
+    </select>
+
+    <!-- 添加用户 -->
+    <insert id="insertSelective" parameterType="com.shuai.bus.domain.Customer">
+        insert into bus_customer
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="identity != null">
+                identity ,
+            </if>
+            <if test="custname != null">
+                custname ,
+            </if>
+            <if test="phone != null">
+                phone ,
+            </if>
+            <if test="sex != null">
+                sex ,
+            </if>
+            <if test="address != null">
+                address ,
+            </if>
+            <if test="career != null">
+                career ,
+            </if>
+            <if test="createtime != null">
+                createtime ,
+            </if>
+        </trim>
+
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="identity != null">
+                #{identity} ,
+            </if>
+            <if test="custname != null">
+                #{custname} ,
+            </if>
+            <if test="phone != null">
+                #{phone} ,
+            </if>
+            <if test="sex != null">
+                #{sex} ,
+            </if>
+            <if test="address != null">
+                #{address} ,
+            </if>
+            <if test="career != null">
+                #{career} ,
+            </if>
+            <if test="createtime != null">
+                #{createtime} ,
+            </if>
+        </trim>
+    </insert>
+
+    <!-- 删除用户 -->
+    <delete id="deleteByPrimaryKey">
+        delete from bus_customer
+        where identity = #{identity}
+    </delete>
+
+    <!-- 修改用户 -->
+    <update id="updateByPrimaryKey">
+        update bus_customer
+        <set>
+            <if test="custname != null">
+                custname =  #{custname} ,
+            </if>
+            <if test="phone != null">
+                phone =  #{phone} ,
+            </if>
+            <if test="sex != null">
+                sex =   #{sex} ,
+            </if>
+            <if test="address != null">
+                address =  #{address} ,
+            </if>
+            <if test="career != null">
+                career =  #{career} ,
+            </if>
+            <if test="createtime != null">
+                createtime = #{createtime} ,
+            </if>
+        </set>
+        where identity = #{identity}
+    </update>
+
+</mapper>
