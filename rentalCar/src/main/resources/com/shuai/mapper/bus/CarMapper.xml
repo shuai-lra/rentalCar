@@ -113,4 +113,52 @@
             </if>
         </trim>
     </insert>
+
+    <!--根据carnumber查询-->
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from bus_car
+        where carnumber = #{carnumber}
+    </select>
+
+    <!--根据carnumber删除车辆-->
+    <delete id="deleteByPrimaryKey">
+        delete from  bus_car
+        where carnumber = #{carnumber}
+    </delete>
+
+    <!--根据carnumber修改-->
+    <update id="updateByPrimaryKeySelective">
+        update bus_car
+        <set>
+            <if test="cartype != null">
+                cartype =  #{cartype} ,
+            </if>
+            <if test="color != null">
+                color =   #{color} ,
+            </if>
+            <if test="price != null">
+                price =  #{price} ,
+            </if>
+            <if test="rentprice != null">
+                rentprice = #{rentprice} ,
+            </if>
+            <if test="deposit != null">
+                deposit = #{deposit} ,
+            </if>
+            <if test="isrenting != null">
+                isrenting = #{isrenting} ,
+            </if>
+            <if test="description != null">
+                description=  #{description} ,
+            </if>
+            <if test="carimg != null">
+                carimg = #{carimg} ,
+            </if>
+            <if test="createtime != null">
+                createtime = #{createtime} ,
+            </if>
+        </set>
+        where carnumber = #{carnumber}
+    </update>
 </mapper>

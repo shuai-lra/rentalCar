@@ -367,7 +367,7 @@
             url: '${pageContext.request.contextPath}/file/uploadFile.action',
             method: 'post',
             acceptMime: 'images/*',
-            field: 'mf',
+            field: 'multipartFile',
             done: function (res,index, upload) {
                 $("#showCarImg").attr('src','${pageContext.request.contextPath}/file/downloadShowFile.action?path='+res.data.src);
                 $('#carimg').val(res.data.src);

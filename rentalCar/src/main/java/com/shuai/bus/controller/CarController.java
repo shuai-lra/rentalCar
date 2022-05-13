@@ -1,5 +1,6 @@
 package com.shuai.bus.controller;
 
+import com.shuai.bus.domain.Car;
 import com.shuai.bus.service.CarService;
 import com.shuai.bus.utils.DataGridView;
 import com.shuai.bus.vo.CarVo;
@@ -37,6 +38,46 @@ public class CarController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResultObj.ADD_ERROR;
+        }
+    }
+
+    @RequestMapping("deleteCar")
+    public ResultObj deleteCar(String carnumber){
+        try {
+            carService.deleteCar(carnumber);
+            return ResultObj.DELETE_SUCCESS;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultObj.DELETE_ERROR;
+        }
+    }
+
+    @RequestMapping("updateCar")
+    public ResultObj updateCar(CarVo carVo){
+        try {
+            String carimg = carVo.getCarimg();
+            if (carimg.endsWith(SysConstant.FILE_UPLOAD_TEMP)){
+                String filePath = AppFileUtils.updateFileName(carVo.getCarimg(), SysConstant.FILE_UPLOAD_TEMP);
+                carVo.setCarimg(filePath);
+                Car car = carService.queryCarByCarNumber(carVo.getCarnumber());
+                AppFileUtils.removeFileByPath(car.getCarimg());
+            }
+            carService.updateCar(carVo);
+            return ResultObj.UPDATE_SUCCESS;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultObj.UPDATE_ERROR;
+        }
+    }
+
+    @RequestMapping("deleteBatchCar")
+    public ResultObj deleteBatchCar(CarVo carVo){
+        try {
+            carService.deleteBatchCar(carVo.getIds());
+            return ResultObj.DELETE_SUCCESS;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultObj.DELETE_ERROR;
         }
     }
 }
