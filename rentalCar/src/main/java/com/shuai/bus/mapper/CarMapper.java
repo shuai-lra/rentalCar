@@ -14,5 +14,5 @@ public interface CarMapper {
 
     void deleteByPrimaryKey(String carnumber);
 
-    void updateByPrimaryKeySelective(CarVo carVo);
+    void updateByPrimaryKeySelective(Car carVo);
 }

@@ -129,4 +129,10 @@
         where identity = #{identity}
     </update>
 
+    <!-- 根据身份证号码查询客户 -->
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from bus_customer
+        where identity = #{identity}
+    </select>
 </mapper>

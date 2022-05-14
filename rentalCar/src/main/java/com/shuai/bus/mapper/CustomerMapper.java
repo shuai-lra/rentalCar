@@ -13,4 +13,6 @@ public interface CustomerMapper {
     void deleteByPrimaryKey(String identity);
 
     void updateByPrimaryKey(CustomerVo customerVo);
+
+    Customer selectByPrimaryKey(String identity);
 }

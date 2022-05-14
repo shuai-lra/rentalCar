@@ -1,5 +1,6 @@
 package com.shuai.bus.service;
 
+import com.shuai.bus.domain.Customer;
 import com.shuai.bus.utils.DataGridView;
 import com.shuai.bus.vo.CustomerVo;
 
@@ -13,4 +14,6 @@ public interface CustomerService {
     void updateCustomer(CustomerVo customerVo);
 
     void deleteBatchCustomer(String[] ids);
+
+    Customer queryCustomerByIdentity(String identity);
 }
