@@ -137,7 +137,178 @@
 
         <script src="${pageContext.request.contextPath }/resources/layui/layui.js"></script>
         <script type="text/javascript">
-        
+                var tableIns;
+                layui.extend({
+                        dtree: '${pageContext.request.contextPath}/resources/layui_ext/dist/dtree'
+                }).use(['jquery','layer','form','dtree','table'],function() {
+                        var $ = layui.jquery;
+                        var layer = layui.layer;
+                        var form = layui.form;
+                        var dtree = layui.dtree;
+                        var table = layui.table;
+                        //渲染表格
+                        tableIns = table.render({
+                                elem: '#menuTable' , //渲染的目标对象
+                                url: '${pageContext.request.contextPath}/menu/loadAllMenu.action', //数据接口地址
+                                title:'菜单列表数据', //标题
+                                height: 'full-150',
+                                cellMinWidth : 100 , //设置列最小默认宽度
+                                toolbar: '#menuToolBar' , //表格的头部工具栏
+                                page: true , //启动分页
+                                cols: [[
+                                        {type:'checkbox',fixed: 'left'},
+                                        {field:'id',title:'ID',align:'center',width:'80'},
+                                        {field:'pid',title:'父节点ID',align:'center',width:'100'},
+                                        {field:'title',title:'菜单名称',align:'center',width:'120'},
+                                        {field:'href',title:'菜单地址',align:'center',width:'220'},
+                                        {field:'spread',title:'是否展开',align:'center',width:'100',templet:function(d) {
+                                                        return d.spread == '1'?'<font color="blue">展开</font>':'<font color="red">不展开</font>'
+                                                }},
+                                        {field:'target',title:'TARGET',align:'center',width:'100'},
+                                        {field:'icon',title:'菜单图标',align:'center',width:'100',templet:function(d) {
+                                                        return "<div class='layui-icon'>"+d.icon+"</div>"
+                                                }},
+                                        {field:'available',title:'是否可用',align:'center',width:'100',templet:function(d) {
+                                                        return d.available=='1'?'<font color=blue>可用</font>':'<font color=red>不可用</font>'
+                                                }},
+                                        {fixed:'right',title:'操作',toolbar:'#menuBar',align:'center',width:'180'}
+                                ]]
+                        });
+
+                        //模糊查询
+                        $("#doSearch").click(function () {
+                                //获取搜索框中的参数
+                                var param =  $("#searchFrm").serialize();
+                                tableIns.reload({
+                                        url: "${pageContext.request.contextPath}/menu/loadAllMenu.action?"+param,
+                                        page: {curr: 1}
+                                })
+                        })
+
+                        //监听头部工具栏
+                        table.on("toolbar(menuTable)",function(obj) {
+                                switch (obj.event) {
+                                        case 'add':
+                                                openAddMenu();
+                                                break;
+                                }
+                        })
+
+                        var url;
+                        var mainIndex ;
+                        //打开添加页面
+                        function openAddMenu(){
+                                mainIndex = layer.open({
+                                        type:1,
+                                        title:"添加菜单",
+                                        content:$("#saveOrUpdateDiv"),
+                                        area: ['800px','450px'],
+                                        success: function(index) {
+                                                //清空表单数据
+                                                $("#dataFrm")[0].reset();
+                                                $("menuSelectDiv").removeClass("layui-show");
+                                                url = "${pageContext.request.contextPath}/menu/addMenu.action"
+
+                                        }
+                                })
+                        }
+
+                        //保存
+                        form.on("submit(doSubmit)",function(obj) {
+                                //序列化表单数据
+                                var param = $("#dataFrm").serialize();
+                                $.get(url,param,function(obj) {
+                                        layer.msg(obj.msg);
+                                        //关闭弹出层
+                                        layer.close(mainIndex);
+                                        //刷新数据表格
+                                        tableIns.reload();
+                                        //刷新左侧得树
+                                        window.parent.left.menuTree.reload();
+                                        //刷新添加和修改的下拉树
+                                        menuTree.reload();
+                                })
+                        })
+
+                        //初始化添加和修改页面的下拉树
+                        var menuTree = dtree.render({
+                                elem: "#menuTree",
+                                dataStyle: "layuiStyle", //使用layui风格展示数据
+                                response:{message:"msg",statusCode:0}, //修改response中返回数据的定义
+                                dataFormat: "list", //配置data的风格为list
+                                url: "${pageContext.request.contextPath}/menu/loadMenuManagerLeftTreeJson.action?spread=1",
+                                icon:"2",
+                                accordion:true
+                        })
+
+                        //点击下拉可以加载树
+                        $("#pid_div").on("click",function() {
+                                $(this).toggleClass("layui-form-selected");
+                                $("#menuSelectDiv").toggleClass("layui-show layui-anim layui-anim-upbit");
+                        })
+
+                        dtree.on("node(menuTree)",function(obj) {
+                                $("#pid_str").val(obj.param.context);
+                                $("#pid").val(obj.param.nodeId);
+                                $("#pid_div").toggleClass("layui-form-selected");
+                                $("#menuSelectDiv").toggleClass("layui-show layui-anim layui-anim-upbit");
+                        })
+
+                        //监听行工具栏
+                        table.on("tool(menuTable)",function(obj) {
+                                //获取当前行数据
+                                var data = obj.data;
+                                var layEvent = obj.event;
+                                if(layEvent == 'edit'){
+                                        openUpdateMenu(data);
+                                }else if(layEvent == 'del'){
+                                        //先判断当前菜单有没有子节点
+                                        $.get("${pageContext.request.contextPath}/menu/checkMenuHasChildren.action?id="+data.id,function(obj) {
+                                                if(obj.code >= 0){
+                                                        layer.msg("当前菜单有子节点,请先删除子节点!");
+                                                }else{
+                                                        layer.confirm("确定删除["+data.title+"]这个菜单吗?",function(index) {
+                                                                $.get("${pageContext.request.contextPath}/menu/deleteMenu.action",{id:data.id},function(result) {
+                                                                        layer.msg(result.msg);
+                                                                        //刷新数据表格
+                                                                        tableIns.reload();
+                                                                        //刷新左侧的树
+                                                                        window.parent.left.menuTree.reload();
+                                                                        //刷新添加和修改的下拉树
+                                                                        menuTree.reload();
+                                                                })
+                                                        })
+                                                }
+                                        })
+                                }
+                        })
+
+                        function openUpdateMenu(data){
+                                mainIndex = layer.open({
+                                        type:1,
+                                        title:"修改菜单",
+                                        content:$("#saveOrUpdateDiv"),
+                                        area: ['800px','450px'],
+                                        success: function(index) {
+                                                form.val("dataFrm",data);//回显
+                                                $("menuSelectDiv").removeClass("layui-show");
+                                                url = "${pageContext.request.contextPath}/menu/updateMenu.action"
+                                                //反选下拉树
+                                                var pid = data.pid;
+                                                var params = dtree.dataInit("menuTree",pid);
+                                                //给下拉框的text赋值
+                                                $("#pid_str").val(params.context);
+                                        }
+                                })
+                        }
+
+                })
+
+                function reloadTable(id) {
+                        tableIns.reload({
+                                url:"${pageContext.request.contextPath}/menu/loadAllMenu.action?id="+id
+                        })
+                }
         </script>
         </body>
         </html>

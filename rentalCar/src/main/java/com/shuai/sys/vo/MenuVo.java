@@ -1,13 +1,11 @@
-/*
 package com.shuai.sys.vo;
 
 import com.shuai.sys.domain.Menu;
 import sun.awt.image.IntegerInterleavedRaster;
 
-*/
 /**
  * 菜单视图对象
- *//*
+ */
 
 public class MenuVo extends Menu {
     private Integer page;
@@ -29,4 +27,3 @@ public class MenuVo extends Menu {
         this.limit = limit;
     }
 }
-*/
