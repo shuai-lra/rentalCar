@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shuai.sys.mapper.RoleMapper">
+
+    <resultMap id="BaseResultMap" type="com.shuai.sys.domain.Role">
+        <!-- id的映射  -->
+        <id column="roleid" jdbcType="INTEGER" property="roleid"/>
+        <!-- 其他字段的映射  -->
+        <result column="rolename" jdbcType="VARCHAR" property="rolename"/>
+        <result column="roledesc" jdbcType="VARCHAR" property="roledesc"/>
+        <result column="available" jdbcType="INTEGER" property="available"/>
+    </resultMap>
+
+    <!--  sql片段  -->
+    <sql id="Base_Column_List">
+        roleid , rolename, roledesc, available
+    </sql>
+
+    <!--查询所有菜单-->
+    <select id="queryAllRole" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>
+        from sys_role
+        <where>
+            <if test="rolename!=null and rolename!=''">
+                and rolename like concat("%" ,#{rolename},"%")
+            </if>
+            <if test="roledesc!=null and roledesc!=''">
+                and roledesc like concat("%",#{roledesc},"%")
+            </if>
+            <if test="available!=null">
+                and available = #{available}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertSelective">
+        insert into sys_role
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="roleid != null">
+                roleid,
+            </if>
+            <if test="rolename != null">
+                rolename,
+            </if>
+            <if test="roledesc != null">
+                roledesc,
+            </if>
+            <if test="available != null">
+                available,
+            </if>
+        </trim>
+
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="roleid != null">
+                #{roleid},
+            </if>
+            <if test="rolename != null">
+                #{rolename},
+            </if>
+            <if test="roledesc != null">
+                #{roledesc},
+            </if>
+            <if test="available != null">
+                #{available},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateByPrimaryKeySelective">
+        update sys_role
+        <set>
+            <if test="rolename != null">
+                rolename = #{rolename},
+            </if>
+            <if test="roledesc != null">
+                roledesc = #{roledesc},
+            </if>
+            <if test="available != null">
+                available = #{available},
+            </if>
+        </set>
+        where roleid = #{roleid}
+    </update>
+
+    <delete id="deleteByPrimaryKey">
+        delete from sys_role where roleid = #{roleid}
+    </delete>
+
+    <delete id="deleteRoleMenuByRid">
+        delete from sys_role_menu where rid = #{roleid}
+    </delete>
+
+    <delete id="deleteRoleUserByRid">
+        delete from sys_role_user where uid = #{userid}
+    </delete>
+
+    <insert id="insertRoleMenu">
+        insert into sys_role_menu(rid,mid) values(#{rid},#{mid})
+    </insert>
+</mapper>

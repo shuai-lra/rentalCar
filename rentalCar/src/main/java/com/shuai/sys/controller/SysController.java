@@ -26,4 +26,24 @@ public class SysController {
     public String toMenuRight(){
         return "system/menu/MenuRight";
     }
+
+    @RequestMapping("toRoleManager")
+    public String toRoleManager(){
+        return "system/role/roleManager";
+    }
+
+    @RequestMapping("toUserManager")
+    public String toUserManager(){
+        return "system/user/userManager";
+    }
+
+    @RequestMapping("toLogInfoManager")
+    public String toLogInfoManager(){
+        return "system/logInfo/logInfoManager";
+    }
+
+    @RequestMapping("toNewsManager")
+    public String toNewsManager(){
+        return "system/news/newsManager";
+    }
 }

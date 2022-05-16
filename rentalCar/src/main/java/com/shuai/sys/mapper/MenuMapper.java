@@ -2,6 +2,7 @@ package com.shuai.sys.mapper;
 
 import com.shuai.sys.domain.Menu;
 import com.shuai.sys.vo.MenuVo;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -15,4 +16,6 @@ public interface MenuMapper {
     void deleteByPrimaryKey(Integer id);
 
     Integer queryMenuByPid(Integer pid);
+
+    List<Menu> queryMenuByRoleId(@Param("available") Integer availableTrue, @Param("rid") Integer roleid);
 }
