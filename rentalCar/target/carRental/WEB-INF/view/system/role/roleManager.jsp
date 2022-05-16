@@ -114,6 +114,189 @@
 <script src="${pageContext.request.contextPath}/resources/layui/layui.js"></script>
 <script type="text/javascript">
 
+        var tableIns;
+        layui.extend({
+                dtree: '${pageContext.request.contextPath}/resources/layui_ext/dist/dtree'
+        }).use(['jquery', 'layer', 'form', 'dtree', 'table'], function () {
+                var $ = layui.jquery;
+                var layer = layui.layer;
+                var form = layui.form;
+                var dtree = layui.dtree;
+                var table = layui.table;
+                //渲染表格
+                tableIns = table.render({
+                        elem: '#roleTable', //渲染的目标对象
+                        url: '${pageContext.request.contextPath}/role/loadAllRole.action', //数据接口地址
+                        title: '角色列表数据', //标题
+                        height: 'full-150',
+                        cellMinWidth: 100, //设置列最小默认宽度
+                        toolbar: '#roleToolBar', //表格的头部工具栏
+                        page: true, //启动分页
+                        cols: [[
+                                {type: 'checkbox', fixed: 'left'},
+                                {field: 'roleid', title: '角色id', align: 'center', width: '120'},
+                                {field: 'rolename', title: '角色名称', align: 'center', width: '240'},
+                                {field: 'roledesc', title: '角色描述', align: 'center', width: '260'},
+                                {
+                                        field: 'available', title: '是否可用', align: 'center', width: '220', templet: function (d) {
+                                                return d.available == '1' ? '<font color="blue">可用</font>' : '<font color="red">不可用</font>'
+                                        }
+                                },
+                                {fixed: 'right', title: '操作', toolbar: '#roleBar', align: 'center', width: '250'}
+                        ]]
+                });
+
+                //模糊查询
+                $("#doSearch").click(function () {
+                        //获取搜索框中的参数
+                        var param = $("#searchFrm").serialize();
+                        tableIns.reload({
+                                url: "${pageContext.request.contextPath}/role/loadAllRole.action?" + param,
+                                page: {curr: 1}
+                        })
+                })
+
+                //监听头部工具栏
+                table.on("toolbar(roleTable)",function (obj) {
+                        switch (obj.event) {
+                                case 'add':
+                                        openAddRole();
+                                        break;
+                                case 'deleteBatch':
+                                        deleteBatch();
+                                        break;
+                        }
+                })
+
+                var mainIndex ;
+                var url;
+                //打开添加页面
+                function openAddRole(){
+                        mainIndex = layer.open({
+                                type: 1,
+                                title: '添加角色',
+                                content: $("#saveOrUpdateDiv"),
+                                area: ['600px','300px'],
+                                success: function (index) {
+                                        //清空表单数据
+                                        $("#dataFrm")[0].reset();
+                                        url = "${pageContext.request.contextPath}/role/addRole.action"
+                                }
+                        })
+                }
+
+                //保存
+                form.on("submit(doSubmit)",function (obj) {
+                        //序列化表格数据
+                        var param = $("#dataFrm").serialize();
+                        $.get(url,param,function (obj) {
+                                layer.msg(obj.msg);
+                                //关闭弹出层
+                                layer.close(mainIndex);
+                                //刷新数据表格
+                                tableIns.reload();
+                        })
+                })
+
+                //监听行工具栏
+                table.on('tool(roleTable)',function (obj) {
+                        //获取当前行数据
+                        var data = obj.data;
+                        var layEvent = obj.event;
+                        if(layEvent == 'edit'){
+                                openUpdateRole(data);
+                        }else if(layEvent == 'del'){
+                                layer.confirm("真的确认删除["+data.rolename+"]这个角色吗?",function (index) {
+                                        $.get("${pageContext.request.contextPath}/role/deleteRole.action",{roleid:data.roleid},function (result) {
+                                                layer.msg(result.msg);
+                                                //刷新数据表格
+                                                tableIns.reload();
+                                        })
+                                })
+                        }else if(layEvent == 'selectRoleMenu'){
+                                openselectRoleMenu(data);
+                        }
+                })
+
+
+                //打开修改页面
+                function openUpdateRole(data){
+                        mainIndex = layer.open({
+                                type: 1,
+                                title: '修改角色',
+                                content: $("#saveOrUpdateDiv"),
+                                area: ['600px','300px'],
+                                success: function (index) {
+                                        //回显数据
+                                        form.val("dataFrm",data);
+                                        url = "${pageContext.request.contextPath}/role/updateRole.action"
+                                }
+                        })
+                }
+
+                //批量删除
+                function deleteBatch(){
+                        //得到选中的数据
+                        var checkStatus = table.checkStatus("roleTable");
+                        var data = checkStatus.data;
+                        var param = "";
+                        //循环拼接id
+                        $.each(data,function (i,item) {
+                                if(i==0){
+                                        param +="ids="+item.roleid;
+                                }else{
+                                        param +="&ids="+item.roleid;
+                                }
+                        });
+                        layer.confirm("真的要删除这些角色吗?",function (index) {
+                                //发送ajax请求
+                                $.get("${pageContext.request.contextPath}/role/deleteBatchRole.action",param,function (result) {
+                                        layer.msg(result.msg);
+                                        //刷新数据表格
+                                        tableIns.reload();
+                                })
+                        })
+                }
+
+                //打开分配菜单弹出层
+                function openselectRoleMenu(data) {
+                        var menuTree;
+                        mainIndex = layer.open({
+                                type:1,
+                                title:'分配【'+data.rolename+"】的角色",
+                                content:$("#selectRoleMenu"),
+                                area:['400px','500px'],
+                                btnAlign:'c',
+                                btn:['<div class="layui-icon layui-icon-release">确认分配</div>','<div class="layui-icon layui-icon-close">取消分配</div>'],
+                                yes:function(index,obj){
+                                        //拼接参数:  roleid 和多个mid
+                                        var nodes = dtree.getCheckbarNodesParam("menuTree");
+                                        var roleid = data.roleid;
+                                        var param = "roleid="+roleid;
+                                        $.each(nodes,function (i,item) {
+                                                param +="&ids="+item.nodeId;
+                                        })
+                                        //发送ajajx请求
+                                        $.get("${pageContext.request.contextPath}/role/saveRoleMenu.action",param,function (result) {
+                                                layer.msg(result.msg);
+                                                layer.close(mainIndex);
+                                        });
+                                },
+                                success:function (index) {
+                                        //初始化树
+                                        menuTree = dtree.render({
+                                                elem: "#menuTree",
+                                                dataStyle: 'layuiStyle',
+                                                response:{message:'msg',statusCode:0},
+                                                dataFormat:"list",
+                                                checkbar:true, //复选框
+                                                checkbarData:"choose",
+                                                url:"${pageContext.request.contextPath}/role/initRoleMenuTreeJson.action?roleid="+data.roleid
+                                        });
+                                }
+                        })
+                }
+        })
 
 </script>
 </body>
