@@ -97,4 +97,17 @@
     <insert id="insertRoleMenu">
         insert into sys_role_menu(rid,mid) values(#{rid},#{mid})
     </insert>
+
+    <delete id="deleteRoleUserByUid">
+        delete from sys_role_user where uid = #{userid}
+    </delete>
+
+    <select id="queryRoleByUid" resultMap="BaseResultMap">
+        select t1.* from sys_role t1 inner join sys_role_user t2 on(t1.roleid = t2.rid)
+        where t2.uid = #{uid} and t1.available = #{available}
+    </select>
+
+    <delete id="dedeleteRoleUserByUid">
+        delete from sys_role_user where uid = #{userid}
+    </delete>
 </mapper>
