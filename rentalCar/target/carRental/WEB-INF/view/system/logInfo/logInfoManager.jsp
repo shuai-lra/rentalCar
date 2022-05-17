@@ -79,6 +79,116 @@
 <script src="${pageContext.request.contextPath}/resources/layui/layui.js"></script>
 <script type="text/javascript">
 
+    //1.声明数据表格对象
+    var tableIns;
+    //2.初始化layui的模块
+    layui.use(['jquery','layer','form','table','laydate'],function () {
+        var $ = layui.jquery,
+            layer = layui.layer,
+            form = layui.form,
+            table = layui.table,
+            laydate = layui.laydate;
+
+        laydate.render({
+            elem:'#startTime',
+            type:'datetime'
+        })
+
+        laydate.render({
+            elem:'#endTime',
+            type:'datetime'
+        })
+
+        //3.渲染数据表格
+        tableIns = table.render({
+            elem : "#logInfoTable",
+            url: "${pageContext.request.contextPath}/logInfo/loadAllLogInfo.action", //数据接口
+            title: "日志信息表",
+            toolbar: "#logInfoToolBar" ,
+            height: "full-190",
+            cellMinWidth: 100 ,
+            page: true , //启动分页
+            cols:[[  //列表数据
+                {type:'checkbox',fixed:"left"},
+                {field:'id',title:'ID',align:'center',with:'120'},
+                {field:'loginname',title:'登录名称',align:'center',with:'260'},
+                {field:'loginip',title:'登录ip',align:'center',with:'105'},
+                {field:'logintime',title:'登录时间',align:'center',with:'180'},
+                {fixd:'right',title:'操作',toolbar:'#logInfoBar' ,align:'center',with:'130'}
+            ]],
+            done:function (data , curr ,count) {
+                //如果不是第一页,当前返回数据为0,我们就让返回上一页
+                if(data.data.length == 0 && curr != 1){
+                    tableIns.reload({
+                        page:{
+                            curr:curr-1
+                        }
+                    })
+                }
+            }
+        })
+
+
+        //模糊查询
+        $("#doSearch").click(function () {
+            //获取搜索框中的参数
+            var param =  $("#searchFrm").serialize();
+            tableIns.reload({
+                url: "${pageContext.request.contextPath}/logInfo/loadAllLogInfo.action?"+param,
+                page: {curr: 1}
+            })
+        })
+
+
+        //监听行工具栏
+        table.on('tool(logInfoTable)',function (obj) {
+            //获取当前行数据
+            var data = obj.data;
+            var layEvent = obj.event;
+            if(layEvent == 'del'){
+                layer.confirm("真的确认删除["+data.loginname+"]这个日志信息吗?",function (index) {
+                    $.get("${pageContext.request.contextPath}/logInfo/deleteLogInfo.action",{id:data.id},function (result) {
+                        layer.msg(result.msg);
+                        //刷新数据表格
+                        tableIns.reload();
+                    })
+                })
+            }
+        })
+
+        //监听头工具栏
+        table.on("toolbar(logInfoTable)",function (obj) {
+            switch (obj.event) {
+                case 'deleteBatch':
+                    deleteBatch();
+                    break;
+            }
+        })
+
+        //批量删除
+        function deleteBatch() {
+            //得到选中的数据
+            var checkStatus = table.checkStatus("logInfoTable");
+            var data = checkStatus.data;
+            var param = "";
+            //循环拼接id
+            $.each(data,function (i,item) {
+                if(i==0){
+                    param +="ids="+item.id;
+                }else{
+                    param +="&ids="+item.id;
+                }
+            });
+            layer.confirm("真的要删除这些日志吗?",function (index) {
+                //发送ajax请求
+                $.get("${pageContext.request.contextPath}/logInfo/deleteBatchLogInfo.action",param,function (result) {
+                    layer.msg(result.msg);
+                    //刷新数据表格
+                    tableIns.reload();
+                })
+            })
+        }
+    })
 
 </script>
 </body>
