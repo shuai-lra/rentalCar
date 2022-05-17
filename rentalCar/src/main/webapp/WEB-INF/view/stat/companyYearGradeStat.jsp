@@ -44,8 +44,58 @@
 <script type="text/javascript" src="${pageContext.request.contextPath}/resources/echarts/js/jquery-3.1.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/resources/layui/layui.js"></script>
 <script type="text/javascript">
+    var tableIns;
+    layui.use(['jquery', 'layer', 'form', 'table', 'laydate'], function () {
+        var $ = layui.jquery,
+            layer = layui.layer,
+            form = layui.form,
+            table = layui.table,
+            laydate = layui.laydate;
 
+        //设置日期的插件
+        laydate.render({
+            elem: '#year',
+            type: 'year',
+            value:new Date()
+        })
 
+        //点击查询
+        $("#doSearch").click(function () {
+            getData();
+        })
+
+        function getData() {
+            //1.获取年
+            var year = $("#year").val();
+
+            if(year ==""){
+                year = new Date().getFullYear();
+            }
+
+            //2.发送ajax请求
+            $.get("${pageContext.request.contextPath}/stat/loadCompanyYearGradeStatJson.action",{year:year},function (data) {
+                var dom = document.getElementById("container");
+                var myChart = echarts.init(dom);
+                var option = {
+                    xAxis: {
+                        type: 'category',
+                        data: ['一月', '二月', '三月', '四月', '五月', '六月', '七月','八月','九月','十月','十一月','十二月']
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            data: data,
+                            type: 'line'
+                        }
+                    ]
+                };
+
+                myChart.setOption(option);
+            })
+        }
+    })
 </script>
 </body>
 </html>

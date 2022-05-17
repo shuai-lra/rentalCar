@@ -44,7 +44,72 @@
 <script type="text/javascript" src="${pageContext.request.contextPath}/resources/echarts/js/jquery-3.1.1.min.js"></script>
 <script src="${pageContext.request.contextPath}/resources/layui/layui.js"></script>
 <script type="text/javascript">
+    var tableIns;
+    layui.use(['jquery', 'layer', 'form', 'table', 'laydate'], function () {
+        var $ = layui.jquery,
+            layer = layui.layer,
+            form = layui.form,
+            table = layui.table,
+            laydate = layui.laydate;
 
+        //设置日期的插件
+        laydate.render({
+            elem: '#year',
+            type: 'year',
+            value:new Date()
+        })
+
+        //点击查询
+        $("#doSearch").click(function () {
+            getData();
+        })
+
+        function getData() {
+            //1.获取年
+            var year = $("#year").val();
+
+            if(year ==""){
+                year = new Date().getFullYear();
+            }
+
+            //2.发送ajax请求
+            $.get("${pageContext.request.contextPath}/stat/loadOpernameYearGradeStatJson.action",{year:year},function (data) {
+                var dom = document.getElementById("container");
+                var myChart = echarts.init(dom);
+                var option = {
+                    title:{
+                        text:'年度业务员销售额统计',
+                        x:'center'
+                    },
+                    tooltip:{
+                        trigger:'axis',
+                        axisPointer:{
+                            type:'shadow'
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: data.name
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            name:'销售额',
+                            data: data.value,
+                            type: 'bar',
+                            showBackground: true,
+                            backgroundStyle: {
+                                color: 'rgba(180, 180, 180, 0.2)'
+                            }
+                        }
+                    ]
+                }
+                myChart.setOption(option);
+            })
+        }
+    })
 </script>
 </body>
 </html>

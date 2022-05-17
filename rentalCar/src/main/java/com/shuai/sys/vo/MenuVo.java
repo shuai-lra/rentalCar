@@ -1,7 +1,6 @@
 package com.shuai.sys.vo;
 
 import com.shuai.sys.domain.Menu;
-import sun.awt.image.IntegerInterleavedRaster;
 
 /**
  * 菜单视图对象
