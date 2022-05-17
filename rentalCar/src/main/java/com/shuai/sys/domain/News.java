@@ -1,8 +1,6 @@
-/*
 package com.shuai.sys.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import org.omg.PortableInterceptor.INACTIVE;
 
 import java.util.Date;
 
@@ -65,4 +63,3 @@ public class News {
         this.opername = opername;
     }
 }
-*/

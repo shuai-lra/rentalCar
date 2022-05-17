@@ -1,4 +1,3 @@
-/*
 package com.shuai.sys.vo;
 
 import com.shuai.sys.domain.News;
@@ -9,10 +8,10 @@ import java.util.Date;
 public class NewsVo extends News {
     private Integer page;
     private Integer limit;
-    */
+
 /**
-     * 扩展表单的参数
-     *//*
+ * 扩展表单的参数
+ */
 
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date startTime;
@@ -61,4 +60,3 @@ public class NewsVo extends News {
         this.ids = ids;
     }
 }
-*/
