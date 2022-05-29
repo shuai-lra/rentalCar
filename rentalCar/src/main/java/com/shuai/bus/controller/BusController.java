@@ -28,7 +28,7 @@ public class BusController {
     }
 
     @RequestMapping("toCheckCarManager")
-    public String toCheckCarManagerc(){
+    public String toCheckCarManager(){
         return "business/check/checkCarManager";
     }
 
